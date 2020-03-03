@@ -87,7 +87,7 @@ describe("sendEdgeNetworkRequestFactory", () => {
     return sendEdgeNetworkRequest({ payload, action }).then(() => {
       expect(cookieTransfer.cookiesToPayload).toHaveBeenCalledWith(
         payload,
-        "adobedc.demdex.net"
+        "adobedc-int.demdex.net"
       );
     });
   });
@@ -98,7 +98,7 @@ describe("sendEdgeNetworkRequestFactory", () => {
       expect(sendNetworkRequest).toHaveBeenCalledWith({
         payload,
         url: jasmine.stringMatching(
-          /https:\/\/edge\.example\.com\/ee\/v1\/test-action\?configId=myconfigId&requestId=[0-9a-f-]+/
+          /http:\/\/edge\.example\.com\/v1\/test-action\?configId=myconfigId&requestId=[0-9a-f-]+/
         ),
         requestId: jasmine.stringMatching(/^[0-9a-f-]+$/)
       });
@@ -111,7 +111,7 @@ describe("sendEdgeNetworkRequestFactory", () => {
       expect(sendNetworkRequest).toHaveBeenCalledWith({
         payload,
         url: jasmine.stringMatching(
-          /https:\/\/adobedc\.demdex\.net\/ee\/v1\/test-action\?configId=myconfigId&requestId=[0-9a-f-]+/
+          /http:\/\/adobedc-int\.demdex\.net\/v1\/test-action\?configId=myconfigId&requestId=[0-9a-f-]+/
         ),
         requestId: jasmine.stringMatching(/^[0-9a-f-]+$/)
       });
