@@ -21,9 +21,7 @@ export default () => ({
   configId: string()
     .unique()
     .required(),
-  edgeDomain: string()
-    .domain()
-    .default(EDGE_DOMAIN),
+  edgeDomain: string().default(EDGE_DOMAIN),
   edgeBasePath: string()
     .nonEmpty()
     .default(EDGE_BASE_PATH),
