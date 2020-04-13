@@ -10,31 +10,41 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-import { cookieJar, defer } from "../../../../../src/utils";
+import { cookieJar } from "../../../../../src/utils";
 import createMigration from "../../../../../src/components/Identity/createMigration";
-import flushPromiseChains from "../../../helpers/flushPromiseChains";
+import removeAllCookies from "../../../helpers/removeAllCookies";
 
-describe("createMigration", () => {
+describe("Identity::createMigration", () => {
+  let idMigrationEnabled;
   let migration;
-  let consentDeferred;
-  let consent;
+
+  const build = () => {
+    migration = createMigration({
+      idMigrationEnabled,
+      orgId: "TEST_ORG"
+    });
+  };
 
   beforeEach(() => {
-    cookieJar.remove("AMCV_TEST_ORG");
-    cookieJar.remove("s_ecid");
-    consentDeferred = defer();
-    consent = jasmine.createSpyObj("consent", {
-      whenConsented: consentDeferred.promise
-    });
-    migration = createMigration({
-      orgId: "TEST_ORG",
-      consent
-    });
+    idMigrationEnabled = true;
   });
 
-  describe("getEcidFromLegacyCookies", () => {
-    it("should return null if no AMCV cookie or s_ecid cookie is present", () => {
-      expect(migration.getEcidFromLegacyCookies()).toBeNull();
+  afterEach(removeAllCookies);
+
+  describe("getEcidFromLegacy", () => {
+    it("should return a promise resolved with undefined if ID migration disabled", () => {
+      idMigrationEnabled = false;
+      build();
+      return expectAsync(migration.getEcidFromLegacy()).toBeResolvedTo(
+        undefined
+      );
+    });
+
+    it("should return promise resolved with undefined if no AMCV cookie or s_ecid cookie is present", () => {
+      build();
+      return expectAsync(migration.getEcidFromLegacy()).toBeResolvedTo(
+        undefined
+      );
     });
 
     [
@@ -43,56 +53,55 @@ describe("createMigration", () => {
       "random|random|MCMID|1234",
       "MCMID|1234"
     ].forEach(cookieValue => {
-      it(`should return ECID if AMCV cookie is ${cookieValue}`, () => {
+      it(`should return promise resolved with ECID if AMCV cookie is ${cookieValue}`, () => {
         cookieJar.set("AMCV_TEST_ORG", cookieValue);
-        expect(migration.getEcidFromLegacyCookies()).toEqual("1234");
+        build();
+        return expectAsync(migration.getEcidFromLegacy()).toBeResolvedTo(
+          "1234"
+        );
       });
 
-      it(`should return ECID if s_ecid cookie is ${cookieValue}`, () => {
+      it(`should return promise resolved with ECID if s_ecid cookie is ${cookieValue}`, () => {
         cookieJar.set("s_ecid", cookieValue);
-        expect(migration.getEcidFromLegacyCookies()).toEqual("1234");
+        build();
+        return expectAsync(migration.getEcidFromLegacy()).toBeResolvedTo(
+          "1234"
+        );
       });
     });
 
-    it("should return null if AMCV does not contain MCMID", () => {
+    it("should return promise resolved with undefined if AMCV does not contain MCMID", () => {
       const cookieValue = "version|0.0.4";
       cookieJar.set("AMCV_NO_MID", cookieValue);
-      expect(migration.getEcidFromLegacyCookies()).toBeNull();
+      build();
+      return expectAsync(migration.getEcidFromLegacy()).toBeResolvedTo(
+        undefined
+      );
     });
 
-    it("should return null if s_ecid does not contain MCMID", () => {
+    it("should return promise resolved with undefined if s_ecid does not contain MCMID", () => {
       const cookieValue = "version|0.0.4";
       cookieJar.set("s_ecid", cookieValue);
-      expect(migration.getEcidFromLegacyCookies()).toBeNull();
+      build();
+      return expectAsync(migration.getEcidFromLegacy()).toBeResolvedTo(
+        undefined
+      );
     });
   });
-  describe("createLegacyCookie", () => {
-    it("waits for consent and creates an AMCV cookie with the value passed", () => {
-      migration.createLegacyCookie("1234");
 
-      return flushPromiseChains()
-        .then(() => {
-          expect(cookieJar.get("AMCV_TEST_ORG")).toBeUndefined();
-          consentDeferred.resolve();
-          return flushPromiseChains();
-        })
-        .then(() => {
-          expect(cookieJar.get("AMCV_TEST_ORG")).toEqual("MCMID|1234");
-        });
-    });
-    it("rejects returned promise if consent denied", () => {
-      consentDeferred.reject(new Error("Consent denied."));
-
-      return expectAsync(
-        migration.createLegacyCookie("123")
-      ).toBeRejectedWithError("Consent denied.");
+  describe("createLegacyIdentityCookie", () => {
+    it("should not write AMCV cookie if ID migration disabled", () => {
+      idMigrationEnabled = false;
+      build();
+      migration.createLegacyIdentityCookie("1234");
+      expect(cookieJar.get("AMCV_TEST_ORG")).toBeUndefined();
     });
     it("should not write AMCV cookie if already present", () => {
+      build();
       const cookieValue = "existing value";
       cookieJar.set("AMCV_TEST_ORG", cookieValue);
-      return migration.createLegacyCookie("1234").then(() => {
-        expect(cookieJar.get("AMCV_TEST_ORG")).toEqual(cookieValue);
-      });
+      migration.createLegacyIdentityCookie("1234");
+      expect(cookieJar.get("AMCV_TEST_ORG")).toEqual(cookieValue);
     });
   });
 });

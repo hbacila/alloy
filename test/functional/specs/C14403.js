@@ -6,6 +6,20 @@ import fixtureFactory from "../helpers/fixtureFactory";
 import createResponse from "../../../src/core/createResponse";
 import generalConstants from "../helpers/constants/general";
 
+import configureAlloyInstance from "../helpers/configureAlloyInstance";
+import {
+  compose,
+  orgMainConfigMain,
+  debugEnabled,
+  migrationDisabled
+} from "../helpers/constants/configParts";
+
+const config = compose(
+  orgMainConfigMain,
+  debugEnabled,
+  migrationDisabled
+);
+
 const networkLogger = createNetworkLogger();
 const { ecidRegex } = generalConstants;
 
@@ -21,26 +35,16 @@ test.meta({
   TEST_RUN: "Regression"
 });
 
-const apiCalls = ClientFunction(() => {
-  window.alloy("configure", {
-    configId: "9999999",
-    orgId: "53A16ACB5CC1D3760A495C99@AdobeOrg",
-    edgeBasePath: window.edgeBasePath,
-    debugEnabled: true,
-    idMigrationEnabled: false
-  });
-
-  return window.alloy("event", {
-    viewStart: true
-  });
+const triggerAlloyEvent = ClientFunction(() => {
+  return window.alloy("event", { viewStart: true });
 });
 
-const getDocumentCookie = ClientFunction(() => {
-  return document.cookie;
-});
+const getDocumentCookie = ClientFunction(() => document.cookie);
 
 test("Test C14403: When ID migration is disabled and no legacy AMCV cookie is found, no AMCV cookie should be created", async () => {
-  await apiCalls();
+  await configureAlloyInstance(config);
+  await triggerAlloyEvent();
+
   await responseStatus(networkLogger.edgeEndpointLogs.requests, 200);
   await t.expect(networkLogger.edgeEndpointLogs.requests.length).eql(1);
 
@@ -63,6 +67,6 @@ test("Test C14403: When ID migration is disabled and no legacy AMCV cookie is fo
   await t
     .expect(documentCookie)
     .notContains(
-      `AMCV_53A16ACB5CC1D3760A495C99%40AdobeOrg=MCMID|${ecidPayload.id}`
+      `AMCV_334F60F35E1597910A495EC2%40AdobeOrg=MCMID|${ecidPayload.id}`
     );
 });

@@ -18,12 +18,17 @@ function HomeWithHistory({ history }) {
     previousPath = loc.pathname;
   });
 
-  const executeOptInCommand = purposes => () => {
+  const getDecisions = () => {
     window
-      .alloy("optIn", {
-        purposes
+      .alloy("getDecisions", {
+        scopes: ["alloy-location-1", "alloy-location-2"]
       })
-      .catch(console.error);
+      .then((decisions = []) => {
+        decisions.forEach(decision => {
+          const domLocation = document.querySelector(`.${decision.scope}`);
+          domLocation.innerHTML = decision.items[0].data.content;
+        });
+      });
   };
 
   return (
@@ -40,33 +45,15 @@ function HomeWithHistory({ history }) {
           <br />
         </div>
 
-        <div className="personalization-container-2">
-          <h2>Some more awesome default content.</h2>
-          You only qualify for the offer{" "}
-          <span role="img" aria-label="">
-            👆
-          </span>{" "}
-          <br></br>
-          if you qualify for the <strong>`Shopping Cart Visitor`</strong>{" "}
-          Segment. (ID: 16754409):
-        </div>
-      </section>
-
-      <section>
-        <div>
-          <h2>Opt-In</h2>
-          <p>To test Opt-In on load, set the `optInEnabled` config to true.</p>
-          <div>
-            <button onClick={executeOptInCommand("all")}>
-              OptIn to all purposes
-            </button>
-            <span>should trigger queued up commands.</span>
+        <div className="personalization-decisions">
+          <div className="alloy-location-1">
+            <h2>Placeholder for Decision 1</h2>
+          </div>
+          <div className="alloy-location-2">
+            <h2>Placeholder for Decision 2</h2>
           </div>
           <div>
-            <button onClick={executeOptInCommand("none")}>
-              OptIn to no purposes
-            </button>
-            <span>should stop most commands and throw an error.</span>
+            <button onClick={getDecisions}>Render Available Decisions</button>
           </div>
         </div>
       </section>

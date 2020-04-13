@@ -10,18 +10,28 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
+import { string, objectOf, boolean, arrayOf } from "../../utils/validation";
+
 /**
  * Verifies user provided event options.
  * @param {*} options The user event options to validate
- * @returns {Array} Array of warnings if the options are invalid
+ * @param {*} logger
+ * @returns {*} Validated options
  */
-export default options => {
-  const warnings = [];
-  const { xdm } = options;
-  if (!xdm && !options.data) {
-    warnings.push("No event xdm or event data specified.");
-  } else if (xdm && !xdm.eventType && !options.type) {
-    warnings.push("No type or xdm.eventType specified.");
+export default ({ options, logger }) => {
+  const eventOptionsValidator = objectOf({
+    viewStart: boolean(),
+    type: string(),
+    xdm: objectOf({
+      eventType: string()
+    }),
+    data: objectOf({}),
+    scopes: arrayOf(string())
+  }).required();
+  const validatedOptions = eventOptionsValidator(options);
+  const { type, xdm } = validatedOptions;
+  if (xdm && !xdm.eventType && !type) {
+    logger.warn("No type or xdm.eventType specified.");
   }
-  return warnings;
+  return validatedOptions;
 };

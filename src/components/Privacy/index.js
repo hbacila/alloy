@@ -10,69 +10,37 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-import { boolean } from "../../utils/validation";
-import { isString } from "../../utils";
+import { createTaskQueue, cookieJar } from "../../utils";
+import createComponent from "./createComponent";
+import createConsentRequestPayload from "./createConsentRequestPayload";
+import readStoredConsentFactory from "./readStoredConsentFactory";
+import sendSetConsentRequestFactory from "./sendSetConsentRequestFactory";
+import parseConsentCookie from "./parseConsentCookie";
+import validateSetConsentOptions from "./validateSetConsentOptions";
 
-const ALL = "all";
-const NONE = "none";
+const createPrivacy = ({ config, consent, sendEdgeNetworkRequest }) => {
+  const { orgId, defaultConsent } = config;
+  const readStoredConsent = readStoredConsentFactory({
+    parseConsentCookie,
+    orgId,
+    cookieJar
+  });
+  const taskQueue = createTaskQueue();
+  const sendSetConsentRequest = sendSetConsentRequestFactory({
+    createConsentRequestPayload,
+    sendEdgeNetworkRequest
+  });
 
-const throwInvalidOptInPurposesError = purposes => {
-  throw new Error(
-    `Opt-in purposes must be "all" or "none". Received: ${purposes}`
-  );
-};
-
-const throwInvalidOptOutPurposesError = purposes => {
-  throw new Error(`Opt-out purposes must be "all". Received: ${purposes}`);
-};
-
-const createPrivacy = ({ config, consent }) => {
-  return {
-    commands: {
-      optIn({ purposes }) {
-        if (!config.optInEnabled) {
-          throw new Error(
-            "optInEnabled must be set to true before using the optIn command."
-          );
-        }
-
-        if (!isString(purposes)) {
-          throwInvalidOptInPurposesError(purposes);
-        }
-
-        const lowerCasePurposes = purposes.toLowerCase();
-
-        if (lowerCasePurposes !== ALL && lowerCasePurposes !== NONE) {
-          throwInvalidOptInPurposesError(purposes);
-        }
-
-        return consent.setOptInPurposes({
-          GENERAL: lowerCasePurposes === ALL
-        });
-      },
-      optOut({ purposes }) {
-        if (!isString(purposes)) {
-          throwInvalidOptOutPurposesError(purposes);
-        }
-
-        const lowerCasePurposes = purposes.toLowerCase();
-
-        if (lowerCasePurposes !== ALL) {
-          throwInvalidOptOutPurposesError(purposes);
-        }
-
-        return consent.setOptOutPurposes({
-          GENERAL: true
-        });
-      }
-    }
-  };
+  return createComponent({
+    readStoredConsent,
+    taskQueue,
+    defaultConsent,
+    consent,
+    sendSetConsentRequest,
+    validateSetConsentOptions
+  });
 };
 
 createPrivacy.namespace = "Privacy";
-
-createPrivacy.configValidators = {
-  optInEnabled: boolean().default(false)
-};
 
 export default createPrivacy;

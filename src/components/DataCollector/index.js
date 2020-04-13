@@ -13,59 +13,55 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-import CONFIG_DOC_URI from "../../constants/docUri";
-
 const createDataCollector = ({ eventManager, logger }) => {
   return {
     commands: {
-      event(options) {
-        const warnings = validateUserEventOptions(options);
-        if (warnings.length) {
-          logger.warn(
-            `Invalid event command options:\n\t - ${warnings.join(
-              "\n\t - "
-            )}\nFor documentation covering the event command see: ${CONFIG_DOC_URI}`
-          );
+      event: {
+        documentationUri: "https://adobe.ly/2r0uUjh",
+        optionsValidator: options => {
+          return validateUserEventOptions({ options, logger });
+        },
+        run: options => {
+          let { xdm } = options;
+          const {
+            data,
+            viewStart = false,
+            documentUnloading = false,
+            type,
+            mergeId,
+            scopes = []
+          } = options;
+          const event = eventManager.createEvent();
+
+          if (documentUnloading) {
+            event.documentMayUnload();
+          }
+
+          if (type || mergeId) {
+            xdm = Object(xdm);
+          }
+
+          if (type) {
+            assign(xdm, { eventType: type });
+          }
+
+          if (mergeId) {
+            assign(xdm, { eventMergeId: mergeId });
+          }
+
+          event.setUserXdm(xdm);
+          event.setUserData(data);
+
+          const details = {
+            isViewStart: viewStart
+          };
+
+          if (scopes.length > 0) {
+            details.scopes = scopes;
+          }
+
+          return eventManager.sendEvent(event, details);
         }
-        let { xdm } = options;
-        const {
-          data,
-          viewStart = false,
-          documentUnloading = false,
-          type,
-          mergeId,
-          scopes = []
-        } = options;
-        const event = eventManager.createEvent();
-
-        if (documentUnloading) {
-          event.documentMayUnload();
-        }
-
-        if (type || mergeId) {
-          xdm = Object(xdm);
-        }
-
-        if (type) {
-          assign(xdm, { eventType: type });
-        }
-
-        if (mergeId) {
-          assign(xdm, { eventMergeId: mergeId });
-        }
-
-        event.setUserXdm(xdm);
-        event.setUserData(data);
-
-        const details = {
-          isViewStart: viewStart
-        };
-
-        if (scopes.length > 0) {
-          details.scopes = scopes;
-        }
-
-        return eventManager.sendEvent(event, details);
       }
     }
   };

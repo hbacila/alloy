@@ -16,10 +16,12 @@ import createLogController from "./createLogController";
 import createLifecycle from "./createLifecycle";
 import createComponentRegistry from "./createComponentRegistry";
 import sendNetworkRequestFactory from "./network/sendNetworkRequestFactory";
-import createConsent from "./createConsent";
+import createConsent from "./consent/createConsent";
+import createConsentStateMachine from "./consent/createConsentStateMachine";
 import createEvent from "./createEvent";
 import createResponse from "./createResponse";
 import executeCommandFactory from "./executeCommandFactory";
+import validateCommandOptions from "./validateCommandOptions";
 import componentCreators from "./componentCreators";
 import buildAndValidateConfig from "./buildAndValidateConfig";
 import initializeComponents from "./initializeComponents";
@@ -30,10 +32,11 @@ import networkStrategyFactory from "./network/networkStrategyFactory";
 import createLogger from "./createLogger";
 import createEventManager from "./createEventManager";
 import createCookieTransfer from "./createCookieTransfer";
-import createConsentRequestPayload from "./edgeNetwork/requestPayloads/createConsentRequestPayload";
 import createDataCollectionRequestPayload from "./edgeNetwork/requestPayloads/createDataCollectionRequestPayload";
 import sendEdgeNetworkRequestFactory from "./edgeNetwork/sendEdgeNetworkRequestFactory";
-import processWarningsAndErrors from "./edgeNetwork/processWarningsAndErrors";
+import processWarningsAndErrorsFactory from "./edgeNetwork/processWarningsAndErrorsFactory";
+import validateNetworkResponseIsWellFormed from "./edgeNetwork/validateNetworkResponseIsWellFormed";
+import isRetryableHttpStatusCode from "./network/isRetryableHttpStatusCode";
 
 // eslint-disable-next-line no-underscore-dangle
 const instanceNamespaces = window.__alloyNS;
@@ -87,23 +90,25 @@ if (instanceNamespaces) {
       });
       const sendNetworkRequest = sendNetworkRequestFactory({
         logger,
-        networkStrategy
+        networkStrategy,
+        isRetryableHttpStatusCode
+      });
+      const processWarningsAndErrors = processWarningsAndErrorsFactory({
+        logger
       });
       const sendEdgeNetworkRequest = sendEdgeNetworkRequestFactory({
         config,
-        logger,
         lifecycle,
         cookieTransfer,
         sendNetworkRequest,
         createResponse,
-        processWarningsAndErrors
+        processWarningsAndErrors,
+        validateNetworkResponseIsWellFormed
       });
+      const generalConsentState = createConsentStateMachine();
       const consent = createConsent({
-        config,
-        logger,
-        lifecycle,
-        createConsentRequestPayload,
-        sendEdgeNetworkRequest
+        generalConsentState,
+        logger
       });
       const eventManager = createEventManager({
         config,
@@ -124,7 +129,9 @@ if (instanceNamespaces) {
             config,
             consent,
             eventManager,
-            logger: logController.createComponentLogger(componentNamespace)
+            logger: logController.createComponentLogger(componentNamespace),
+            lifecycle,
+            sendEdgeNetworkRequest
           };
         }
       });
@@ -140,7 +147,8 @@ if (instanceNamespaces) {
       logger,
       configureCommand,
       debugCommand,
-      handleError
+      handleError,
+      validateCommandOptions
     });
 
     const instance = instanceFactory(executeCommand);

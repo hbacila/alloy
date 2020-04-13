@@ -50,13 +50,17 @@
       }
 
       alloy("configure", {
+        // defaultConsent: { general: "pending" },
         edgeDomain:
           location.host.indexOf("alloyio.com") !== -1
             ? "firstparty.alloyio.com"
             : undefined,
-        configId: "9999999",
-        orgId: "53A16ACB5CC1D3760A495C99@AdobeOrg",
+        configId: "60928f59-0406-4353-bfe3-22ed633c4f67",
+        orgId: "334F60F35E1597910A495EC2@AdobeOrg",
         debugEnabled: true,
+        idMigrationEnabled: !(
+          getUrlParameter("idMigrationEnabled") === "false"
+        ),
         prehidingStyle: ".personalization-container { opacity: 0 !important }",
         onBeforeEventSend: function(options) {
           const xdm = options.xdm;
@@ -74,6 +78,7 @@
 
       alloy("event", {
         viewStart: true,
+        scopes: ["alloy-location-1", "alloy-location-2"],
         xdm: {
           // Demonstrates overriding automatically collected data
           device: {
@@ -102,8 +107,7 @@
       // For Testing multiple instances.
       // We use a different orgId and configId.
       organizationTwo("configure", {
-        // edgeDomain: "edgegateway.azurewebsites.net",
-        configId: "8888888",
+        configId: "9999999",
         orgId: "97D1F3F459CE0AD80A495CBE@AdobeOrg",
         debugEnabled: true,
         clickCollectionEnabled: false
