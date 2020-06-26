@@ -11,18 +11,20 @@ governing permissions and limitations under the License.
 
 import createDataCollector from "../../../../../src/components/DataCollector/index";
 import { noop } from "../../../../../src/utils";
-import createEvent from "../../../../../src/core/createEvent";
 
 describe("Event Command", () => {
   let event;
   let logger;
   let eventManager;
-  let eventCommand;
+  let sendEventCommand;
   beforeEach(() => {
-    event = createEvent();
-    spyOn(event, "documentMayUnload").and.callThrough();
-    spyOn(event, "setUserData").and.callThrough();
-    spyOn(event, "setUserXdm").and.callThrough();
+    event = jasmine.createSpyObj("event", [
+      "documentMayUnload",
+      "setUserData",
+      "setUserXdm",
+      "mergeXdm",
+      "mergeMeta"
+    ]);
     logger = jasmine.createSpyObj("logger", {
       warn: undefined
     });
@@ -43,86 +45,96 @@ describe("Event Command", () => {
       eventManager,
       logger
     });
-    eventCommand = dataCollector.commands.event;
+    sendEventCommand = dataCollector.commands.sendEvent;
   });
 
   it("sends event", () => {
     const xdm = { a: "b" };
     const data = { c: "d" };
     const options = {
-      viewStart: true,
+      renderDecisions: true,
       type: "test",
       xdm,
       data,
       documentUnloading: true
     };
 
-    return eventCommand.run(options).then(result => {
+    return sendEventCommand.run(options).then(result => {
       expect(event.documentMayUnload).toHaveBeenCalled();
       expect(event.setUserXdm).toHaveBeenCalledWith(xdm);
       expect(event.setUserData).toHaveBeenCalledWith(data);
       expect(eventManager.sendEvent).toHaveBeenCalledWith(event, {
-        isViewStart: true
+        renderDecisions: true,
+        decisionScopes: []
       });
       expect(result).toEqual("sendEventResult");
     });
   });
 
-  it("sends event with scopes parameter when scopes is not empty", () => {
+  it("sends event with decisionScopes parameter when decisionScopes is not empty", () => {
     const options = {
-      viewStart: true,
-      scopes: ["Foo1", "Foo2"]
+      renderDecisions: true,
+      decisionScopes: ["Foo1", "Foo2"]
     };
 
-    return eventCommand.run(options).then(result => {
+    return sendEventCommand.run(options).then(result => {
       expect(eventManager.sendEvent).toHaveBeenCalledWith(event, {
-        isViewStart: true,
-        scopes: ["Foo1", "Foo2"]
+        renderDecisions: true,
+        decisionScopes: ["Foo1", "Foo2"]
       });
       expect(result).toEqual("sendEventResult");
     });
   });
 
   it("does not call documentMayUnload if documentUnloading is not defined", () => {
-    return eventCommand.run({}).then(() => {
+    return sendEventCommand.run({}).then(() => {
       expect(event.documentMayUnload).not.toHaveBeenCalled();
     });
   });
 
-  it("sets isViewStart to false if viewStart is not defined", () => {
-    return eventCommand.run({}).then(() => {
+  it("sets renderDecisions to false if renderDecisions is not defined", () => {
+    return sendEventCommand.run({}).then(() => {
       expect(eventManager.sendEvent).toHaveBeenCalledWith(event, {
-        isViewStart: false
+        renderDecisions: false,
+        decisionScopes: []
       });
     });
   });
 
-  it("sets eventType and eventMergeId", () => {
-    return eventCommand
+  it("merges eventType", () => {
+    return sendEventCommand
       .run({
-        type: "mytype",
+        type: "mytype"
+      })
+      .then(() => {
+        expect(event.mergeXdm).toHaveBeenCalledWith({
+          eventType: "mytype"
+        });
+      });
+  });
+
+  it("merges eventMergeID", () => {
+    return sendEventCommand
+      .run({
         mergeId: "mymergeid"
       })
       .then(() => {
-        expect(event.setUserXdm).toHaveBeenCalledWith({
-          eventType: "mytype",
+        expect(event.mergeXdm).toHaveBeenCalledWith({
           eventMergeId: "mymergeid"
         });
       });
   });
 
-  it("merges eventType and eventMergeId with the userXdm", () => {
-    return eventCommand
+  it("merges datasetId", () => {
+    return sendEventCommand
       .run({
-        xdm: { key: "value" },
-        type: "mytype",
-        mergeId: "mymergeid"
+        datasetId: "mydatasetId"
       })
       .then(() => {
-        expect(event.setUserXdm).toHaveBeenCalledWith({
-          key: "value",
-          eventType: "mytype",
-          eventMergeId: "mymergeid"
+        expect(event.mergeMeta).toHaveBeenCalledWith({
+          collect: {
+            datasetId: "mydatasetId"
+          }
         });
       });
   });

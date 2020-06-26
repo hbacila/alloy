@@ -6,10 +6,10 @@ import edgeDomainFirstParty from "./edgeDomainFirstParty";
 import edgeDomainThirdParty from "./edgeDomainThirdParty";
 import migrationEnabled from "./migrationEnabled";
 import migrationDisabled from "./migrationDisabled";
-import errorsEnabled from "./errorsEnabled";
-import errorsDisabled from "./errorsDisabled";
 import consentIn from "./consentIn";
 import consentPending from "./consentPending";
+import thirdPartyCookiesEnabled from "./thirdPartyCookiesEnabled";
+import thirdPartyCookiesDisabled from "./thirdPartyCookiesDisabled";
 
 const compose = (...objects) => Object.assign({}, ...objects);
 
@@ -23,8 +23,8 @@ export {
   edgeDomainThirdParty,
   migrationEnabled,
   migrationDisabled,
-  errorsEnabled,
-  errorsDisabled,
   consentIn,
-  consentPending
+  consentPending,
+  thirdPartyCookiesEnabled,
+  thirdPartyCookiesDisabled
 };

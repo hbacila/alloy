@@ -14,62 +14,83 @@ import {
   fireReferrerHideableImage,
   areThirdPartyCookiesSupportedByDefault
 } from "../../utils";
-import processIdSyncsFactory from "./processIdSyncsFactory";
+import injectProcessIdSyncs from "./injectProcessIdSyncs";
 import configValidators from "./configValidators";
 
 import createComponent from "./createComponent";
-import createMigration from "./createMigration";
-import handleResponseForIdSyncsFactory from "./handleResponseForIdSyncsFactory";
-import ensureRequestHasIdentityFactory from "./ensureRequestHasIdentityFactory";
-import createCustomerIds from "./customerIds/createCustomerIds";
+import createLegacyIdentity from "./createLegacyIdentity";
+import awaitVisitorOptIn from "./visitorService/awaitVisitorOptIn";
+import injectGetEcidFromVisitor from "./visitorService/injectGetEcidFromVisitor";
+import injectHandleResponseForIdSyncs from "./injectHandleResponseForIdSyncs";
+import injectEnsureRequestHasIdentity from "./injectEnsureRequestHasIdentity";
 import addEcidQueryToEvent from "./addEcidQueryToEvent";
-import doesIdentityCookieExistFactory from "./doesIdentityCookieExistFactory";
-import setDomainForInitialIdentityPayloadFactory from "./setDomainForInitialIdentityPayloadFactory";
-import addEcidFromLegacyToPayloadFactory from "./addEcidFromLegacyToPayloadFactory";
+import injectDoesIdentityCookieExist from "./injectDoesIdentityCookieExist";
+import injectSetDomainForInitialIdentityPayload from "./injectSetDomainForInitialIdentityPayload";
+import injectAddLegacyEcidToPayload from "./injectAddLegacyEcidToPayload";
 import addEcidToPayload from "./addEcidToPayload";
-import awaitIdentityCookieFactory from "./awaitIdentityCookieFactory";
+import injectAwaitIdentityCookie from "./injectAwaitIdentityCookie";
 import getEcidFromResponse from "./getEcidFromResponse";
+import createGetIdentity from "./getIdentity/createGetIdentity";
+import createIdentityPayload from "./getIdentity/createIdentityPayload";
 
-const createIdentity = ({ config, logger, consent, eventManager }) => {
-  const { orgId, idMigrationEnabled, thirdPartyCookiesEnabled } = config;
-  const customerIds = createCustomerIds({ eventManager, consent, logger });
-  const migration = createMigration({ idMigrationEnabled, orgId, logger });
-  const doesIdentityCookieExist = doesIdentityCookieExistFactory({ orgId });
-  const setDomainForInitialIdentityPayload = setDomainForInitialIdentityPayloadFactory(
+const createIdentity = ({
+  config,
+  logger,
+  consent,
+  sendEdgeNetworkRequest
+}) => {
+  const { orgId, thirdPartyCookiesEnabled } = config;
+
+  const getEcidFromVisitor = injectGetEcidFromVisitor({
+    logger,
+    orgId,
+    awaitVisitorOptIn
+  });
+  const legacyIdentity = createLegacyIdentity({
+    config,
+    getEcidFromVisitor
+  });
+  const doesIdentityCookieExist = injectDoesIdentityCookieExist({ orgId });
+  const getIdentity = createGetIdentity({
+    sendEdgeNetworkRequest,
+    createIdentityPayload
+  });
+  const setDomainForInitialIdentityPayload = injectSetDomainForInitialIdentityPayload(
     {
       thirdPartyCookiesEnabled,
       areThirdPartyCookiesSupportedByDefault
     }
   );
-  const addEcidFromLegacyToPayload = addEcidFromLegacyToPayloadFactory({
-    getEcidFromLegacy: migration.getEcidFromLegacy,
+  const addLegacyEcidToPayload = injectAddLegacyEcidToPayload({
+    getLegacyEcid: legacyIdentity.getEcid,
     addEcidToPayload
   });
-  const awaitIdentityCookie = awaitIdentityCookieFactory({
+  const awaitIdentityCookie = injectAwaitIdentityCookie({
     orgId,
     doesIdentityCookieExist
   });
-  const ensureRequestHasIdentity = ensureRequestHasIdentityFactory({
+  const ensureRequestHasIdentity = injectEnsureRequestHasIdentity({
     doesIdentityCookieExist,
     setDomainForInitialIdentityPayload,
-    addEcidFromLegacyToPayload,
+    addLegacyEcidToPayload,
     awaitIdentityCookie,
     logger
   });
-  const processIdSyncs = processIdSyncsFactory({
+  const processIdSyncs = injectProcessIdSyncs({
     fireReferrerHideableImage,
     logger
   });
-  const handleResponseForIdSyncs = handleResponseForIdSyncsFactory({
+  const handleResponseForIdSyncs = injectHandleResponseForIdSyncs({
     processIdSyncs
   });
   return createComponent({
     addEcidQueryToEvent,
-    customerIds,
     ensureRequestHasIdentity,
-    createLegacyIdentityCookie: migration.createLegacyIdentityCookie,
+    setLegacyEcid: legacyIdentity.setEcid,
     handleResponseForIdSyncs,
-    getEcidFromResponse
+    getEcidFromResponse,
+    getIdentity,
+    consent
   });
 };
 

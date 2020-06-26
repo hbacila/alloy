@@ -47,16 +47,11 @@ export default ({
   coreConfigValidators,
   createConfig,
   logger,
-  setDebugEnabled,
-  setErrorsEnabled
+  setDebugEnabled
 }) => {
   const schema = buildSchema(coreConfigValidators, componentCreators);
   const config = createConfig(transformOptions(schema, options));
-  setErrorsEnabled(config.errorsEnabled);
   setDebugEnabled(config.debugEnabled, { fromConfig: true });
-  // toJson is expensive so we short circuit if logging is disabled
-  if (logger.enabled) {
-    logger.log("Computed configuration:", config);
-  }
+  logger.logOnInstanceConfigured({ config });
   return config;
 };

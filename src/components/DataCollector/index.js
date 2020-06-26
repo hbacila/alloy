@@ -1,4 +1,3 @@
-import { assign } from "../../utils";
 import validateUserEventOptions from "./validateUserEventOptions";
 
 /*
@@ -16,20 +15,21 @@ governing permissions and limitations under the License.
 const createDataCollector = ({ eventManager, logger }) => {
   return {
     commands: {
-      event: {
+      sendEvent: {
         documentationUri: "https://adobe.ly/2r0uUjh",
         optionsValidator: options => {
           return validateUserEventOptions({ options, logger });
         },
         run: options => {
-          let { xdm } = options;
           const {
+            xdm,
             data,
-            viewStart = false,
             documentUnloading = false,
             type,
             mergeId,
-            scopes = []
+            renderDecisions = false,
+            decisionScopes = [],
+            datasetId
           } = options;
           const event = eventManager.createEvent();
 
@@ -37,30 +37,33 @@ const createDataCollector = ({ eventManager, logger }) => {
             event.documentMayUnload();
           }
 
-          if (type || mergeId) {
-            xdm = Object(xdm);
-          }
-
-          if (type) {
-            assign(xdm, { eventType: type });
-          }
-
-          if (mergeId) {
-            assign(xdm, { eventMergeId: mergeId });
-          }
-
           event.setUserXdm(xdm);
           event.setUserData(data);
 
-          const details = {
-            isViewStart: viewStart
-          };
-
-          if (scopes.length > 0) {
-            details.scopes = scopes;
+          if (type) {
+            event.mergeXdm({
+              eventType: type
+            });
           }
 
-          return eventManager.sendEvent(event, details);
+          if (mergeId) {
+            event.mergeXdm({
+              eventMergeId: mergeId
+            });
+          }
+
+          if (datasetId) {
+            event.mergeMeta({
+              collect: {
+                datasetId
+              }
+            });
+          }
+
+          return eventManager.sendEvent(event, {
+            renderDecisions,
+            decisionScopes
+          });
         }
       }
     }

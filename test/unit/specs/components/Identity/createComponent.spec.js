@@ -11,32 +11,43 @@ governing permissions and limitations under the License.
 */
 
 import createComponent from "../../../../../src/components/Identity/createComponent";
+import { defer } from "../../../../../src/utils";
+import flushPromiseChains from "../../../helpers/flushPromiseChains";
 
 describe("Identity::createComponent", () => {
   let addEcidQueryToEvent;
-  let customerIds;
   let ensureRequestHasIdentity;
-  let createLegacyIdentityCookie;
+  let setLegacyEcid;
   let handleResponseForIdSyncs;
   let getEcidFromResponse;
   let component;
+  let getIdentity;
+  let consentDeferred;
+  let consent;
+  let getIdentityDeferred;
 
   beforeEach(() => {
     addEcidQueryToEvent = jasmine.createSpy("addEcidQueryToEvent");
-    customerIds = jasmine.createSpyObj("customerIds", ["addToPayload", "sync"]);
     ensureRequestHasIdentity = jasmine.createSpy("ensureRequestHasIdentity");
-    createLegacyIdentityCookie = jasmine.createSpy(
-      "createLegacyIdentityCookie"
-    );
+    setLegacyEcid = jasmine.createSpy("setLegacyEcid");
     handleResponseForIdSyncs = jasmine.createSpy("handleResponseForIdSyncs");
     getEcidFromResponse = jasmine.createSpy("getEcidFromResponse");
+    getIdentityDeferred = defer();
+    consentDeferred = defer();
+    consent = jasmine.createSpyObj("consent", {
+      awaitConsent: consentDeferred.promise
+    });
+    getIdentity = jasmine
+      .createSpy("getIdentity")
+      .and.returnValue(getIdentityDeferred.promise);
     component = createComponent({
       addEcidQueryToEvent,
-      customerIds,
       ensureRequestHasIdentity,
-      createLegacyIdentityCookie,
+      setLegacyEcid,
       handleResponseForIdSyncs,
-      getEcidFromResponse
+      getEcidFromResponse,
+      getIdentity,
+      consent
     });
   });
 
@@ -44,13 +55,6 @@ describe("Identity::createComponent", () => {
     const event = { type: "event" };
     component.lifecycle.onBeforeEvent({ event });
     expect(addEcidQueryToEvent).toHaveBeenCalledWith(event);
-  });
-
-  it("adds customer IDs to request payload", () => {
-    const payload = { type: "payload" };
-    const onResponse = jasmine.createSpy("onResponse");
-    component.lifecycle.onBeforeRequest({ payload, onResponse });
-    expect(customerIds.addToPayload).toHaveBeenCalledWith(payload);
   });
 
   it("ensures request has identity", () => {
@@ -67,22 +71,26 @@ describe("Identity::createComponent", () => {
   });
 
   it("does not create legacy identity cookie if response does not contain ECID", () => {
+    const idSyncsPromise = Promise.resolve();
+    handleResponseForIdSyncs.and.returnValue(idSyncsPromise);
     const response = { type: "response" };
     component.lifecycle.onResponse({ response });
     expect(getEcidFromResponse).toHaveBeenCalledWith(response);
-    expect(createLegacyIdentityCookie).not.toHaveBeenCalled();
+    expect(setLegacyEcid).not.toHaveBeenCalled();
   });
 
   it("creates legacy identity cookie if response contains ECID", () => {
+    const idSyncsPromise = Promise.resolve();
+    handleResponseForIdSyncs.and.returnValue(idSyncsPromise);
     getEcidFromResponse.and.returnValue("user@adobe");
     const response = { type: "response" };
     component.lifecycle.onResponse({ response });
     expect(getEcidFromResponse).toHaveBeenCalledWith(response);
-    expect(createLegacyIdentityCookie).toHaveBeenCalledWith("user@adobe");
+    expect(setLegacyEcid).toHaveBeenCalledWith("user@adobe");
 
     component.lifecycle.onResponse({ response });
     expect(getEcidFromResponse).toHaveBeenCalledTimes(1);
-    expect(createLegacyIdentityCookie).toHaveBeenCalledTimes(1);
+    expect(setLegacyEcid).toHaveBeenCalledTimes(1);
   });
 
   it("handles ID syncs", () => {
@@ -91,12 +99,63 @@ describe("Identity::createComponent", () => {
     const response = { type: "response" };
     const result = component.lifecycle.onResponse({ response });
     expect(handleResponseForIdSyncs).toHaveBeenCalledWith(response);
-    expect(result).toBe(idSyncsPromise);
+    return expectAsync(result).toBeResolvedTo(undefined);
   });
 
-  it("sets customer IDs", () => {
-    const ids = { type: "customerIds" };
-    component.commands.setCustomerIds.run(ids);
-    expect(customerIds.sync).toHaveBeenCalledWith(ids);
+  it("getIdentity command should make a request when ecid is not available", () => {
+    const idSyncsPromise = Promise.resolve();
+    handleResponseForIdSyncs.and.returnValue(idSyncsPromise);
+    const onResolved = jasmine.createSpy("onResolved");
+    component.commands.getIdentity
+      .run({ namespaces: ["ECID"] })
+      .then(onResolved);
+
+    return flushPromiseChains()
+      .then(() => {
+        expect(getIdentity).not.toHaveBeenCalled();
+        expect(onResolved).not.toHaveBeenCalled();
+        consentDeferred.resolve();
+        return flushPromiseChains();
+      })
+      .then(() => {
+        expect(getIdentity).toHaveBeenCalled();
+        getEcidFromResponse.and.returnValue("user@adobe");
+        const response = { type: "response" };
+        component.lifecycle.onResponse({ response });
+        getIdentityDeferred.resolve();
+        return flushPromiseChains();
+      })
+      .then(() => {
+        expect(onResolved).toHaveBeenCalledWith({
+          identity: {
+            ECID: "user@adobe"
+          }
+        });
+      });
+  });
+
+  it("getIdentity command should not make a request when ecid is available", () => {
+    const idSyncsPromise = Promise.resolve();
+    handleResponseForIdSyncs.and.returnValue(idSyncsPromise);
+    getEcidFromResponse.and.returnValue("user@adobe");
+    const response = { type: "response" };
+    component.lifecycle.onResponse({ response });
+    const onResolved = jasmine.createSpy("onResolved");
+    component.commands.getIdentity.run().then(onResolved);
+    return flushPromiseChains()
+      .then(() => {
+        expect(getIdentity).not.toHaveBeenCalled();
+        expect(onResolved).not.toHaveBeenCalled();
+        consentDeferred.resolve();
+        return flushPromiseChains();
+      })
+      .then(() => {
+        expect(getIdentity).not.toHaveBeenCalled();
+        expect(onResolved).toHaveBeenCalledWith({
+          identity: {
+            ECID: "user@adobe"
+          }
+        });
+      });
   });
 });

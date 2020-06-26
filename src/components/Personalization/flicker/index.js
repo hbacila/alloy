@@ -11,8 +11,8 @@ governing permissions and limitations under the License.
 */
 
 import { createNode, appendNode, removeNode } from "../../../utils/dom";
-import { STYLE } from "../../../constants/tagNames";
-import { getElementById } from "../helper/dom";
+import { STYLE } from "../../../constants/tagName";
+import { getElementById } from "../dom-actions/dom";
 
 const PREHIDING_ID = "alloy-prehiding";
 const HIDING_STYLE_DEFINITION = "{ visibility: hidden }";

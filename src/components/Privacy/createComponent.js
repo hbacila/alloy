@@ -11,6 +11,7 @@ governing permissions and limitations under the License.
 */
 
 import { assign } from "../../utils";
+import { GENERAL } from "../../constants/consentPurpose";
 
 export default ({
   readStoredConsent,
@@ -20,14 +21,21 @@ export default ({
   sendSetConsentRequest,
   validateSetConsentOptions
 }) => {
-  const consentByPurpose = assign({}, defaultConsent, readStoredConsent());
+  const consentByPurpose = assign(
+    { [GENERAL]: defaultConsent },
+    readStoredConsent()
+  );
   consent.setConsent(consentByPurpose);
 
   const readCookieIfQueueEmpty = () => {
     if (taskQueue.length === 0) {
+      const storedConsent = readStoredConsent();
+
       // Only read cookies when there are no outstanding setConsent
       // requests. This helps with race conditions.
-      consent.setConsent(readStoredConsent());
+      if (storedConsent) {
+        consent.setConsent(storedConsent);
+      }
     }
   };
 
@@ -35,25 +43,12 @@ export default ({
     commands: {
       setConsent: {
         optionsValidator: validateSetConsentOptions,
-        run: options => {
+        run: ({ consent: value }) => {
           consent.suspend();
           return taskQueue
-            .addTask(() => sendSetConsentRequest(options))
+            .addTask(() => sendSetConsentRequest(value))
             .catch(error => {
               readCookieIfQueueEmpty();
-              // This check re-writes the error message from Konductor to be more clear.
-              // We could check for this before sending the request, but if we let the
-              // request go out and Konductor adds this feature, customers don't need to
-              // update Alloy to get the functionality.
-              if (
-                error &&
-                error.message &&
-                error.message.includes("User is opted out")
-              ) {
-                throw new Error(
-                  "The user previously declined consent, which cannot be changed."
-                );
-              }
               throw error;
             })
             .then(readCookieIfQueueEmpty);

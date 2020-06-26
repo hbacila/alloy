@@ -10,66 +10,67 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-import instanceFactory from "./instanceFactory";
-import { getApexDomain, storageFactory, cookieJar } from "../utils";
+import createInstance from "./createInstance";
+import { getApexDomain, injectStorage, cookieJar } from "../utils";
 import createLogController from "./createLogController";
 import createLifecycle from "./createLifecycle";
 import createComponentRegistry from "./createComponentRegistry";
-import sendNetworkRequestFactory from "./network/sendNetworkRequestFactory";
+import injectSendNetworkRequest from "./network/injectSendNetworkRequest";
 import createConsent from "./consent/createConsent";
 import createConsentStateMachine from "./consent/createConsentStateMachine";
 import createEvent from "./createEvent";
 import createResponse from "./createResponse";
-import executeCommandFactory from "./executeCommandFactory";
+import injectExecuteCommand from "./injectExecuteCommand";
 import validateCommandOptions from "./validateCommandOptions";
 import componentCreators from "./componentCreators";
 import buildAndValidateConfig from "./buildAndValidateConfig";
 import initializeComponents from "./initializeComponents";
 import createConfig from "./config/createConfig";
 import createCoreConfigs from "./config/createCoreConfigs";
-import handleErrorFactory from "./handleErrorFactory";
-import networkStrategyFactory from "./network/networkStrategyFactory";
+import injectHandleError from "./injectHandleError";
+import injectNetworkStrategy from "./network/injectNetworkStrategy";
 import createLogger from "./createLogger";
 import createEventManager from "./createEventManager";
 import createCookieTransfer from "./createCookieTransfer";
 import createDataCollectionRequestPayload from "./edgeNetwork/requestPayloads/createDataCollectionRequestPayload";
-import sendEdgeNetworkRequestFactory from "./edgeNetwork/sendEdgeNetworkRequestFactory";
-import processWarningsAndErrorsFactory from "./edgeNetwork/processWarningsAndErrorsFactory";
+import injectSendEdgeNetworkRequest from "./edgeNetwork/injectSendEdgeNetworkRequest";
+import injectProcessWarningsAndErrors from "./edgeNetwork/injectProcessWarningsAndErrors";
 import validateNetworkResponseIsWellFormed from "./edgeNetwork/validateNetworkResponseIsWellFormed";
 import isRetryableHttpStatusCode from "./network/isRetryableHttpStatusCode";
 
 // eslint-disable-next-line no-underscore-dangle
-const instanceNamespaces = window.__alloyNS;
+const instanceNames = window.__alloyNS;
 
-const createNamespacedStorage = storageFactory(window);
+const createNamespacedStorage = injectStorage(window);
 
 const { console } = window;
+
+// set this up as a function so that monitors can be added at anytime
+// eslint-disable-next-line no-underscore-dangle
+const getMonitors = () => window.__alloyMonitors || [];
 
 const coreConfigValidators = createCoreConfigs();
 const apexDomain = getApexDomain(window, cookieJar);
 
-if (instanceNamespaces) {
-  instanceNamespaces.forEach(instanceNamespace => {
-    const logController = createLogController({
+if (instanceNames) {
+  instanceNames.forEach(instanceName => {
+    const {
+      setDebugEnabled,
+      logger,
+      createComponentLogger
+    } = createLogController({
       console,
       locationSearch: window.location.search,
       createLogger,
-      instanceNamespace,
-      createNamespacedStorage
+      instanceName,
+      createNamespacedStorage,
+      getMonitors
     });
-    const { setDebugEnabled, logger } = logController;
     const componentRegistry = createComponentRegistry();
     const lifecycle = createLifecycle(componentRegistry);
-    const networkStrategy = networkStrategyFactory(window, logger);
-    let errorsEnabled = true;
-    const getErrorsEnabled = () => {
-      return errorsEnabled;
-    };
-    const setErrorsEnabled = value => {
-      errorsEnabled = value;
-    };
+    const networkStrategy = injectNetworkStrategy(window, logger);
 
-    const debugCommand = options => {
+    const setDebugCommand = options => {
       setDebugEnabled(options.enabled, { fromConfig: false });
     };
 
@@ -80,23 +81,22 @@ if (instanceNamespaces) {
         coreConfigValidators,
         createConfig,
         logger,
-        setDebugEnabled,
-        setErrorsEnabled
+        setDebugEnabled
       });
       const cookieTransfer = createCookieTransfer({
         cookieJar,
         orgId: config.orgId,
         apexDomain
       });
-      const sendNetworkRequest = sendNetworkRequestFactory({
+      const sendNetworkRequest = injectSendNetworkRequest({
         logger,
         networkStrategy,
         isRetryableHttpStatusCode
       });
-      const processWarningsAndErrors = processWarningsAndErrorsFactory({
+      const processWarningsAndErrors = injectProcessWarningsAndErrors({
         logger
       });
-      const sendEdgeNetworkRequest = sendEdgeNetworkRequestFactory({
+      const sendEdgeNetworkRequest = injectSendEdgeNetworkRequest({
         config,
         lifecycle,
         cookieTransfer,
@@ -124,12 +124,12 @@ if (instanceNamespaces) {
         componentCreators,
         lifecycle,
         componentRegistry,
-        getImmediatelyAvailableTools(componentNamespace) {
+        getImmediatelyAvailableTools(componentName) {
           return {
             config,
             consent,
             eventManager,
-            logger: logController.createComponentLogger(componentNamespace),
+            logger: createComponentLogger(componentName),
             lifecycle,
             sendEdgeNetworkRequest
           };
@@ -137,24 +137,24 @@ if (instanceNamespaces) {
       });
     };
 
-    const handleError = handleErrorFactory({
-      instanceNamespace,
-      getErrorsEnabled,
+    const handleError = injectHandleError({
+      instanceName,
       logger
     });
 
-    const executeCommand = executeCommandFactory({
+    const executeCommand = injectExecuteCommand({
       logger,
       configureCommand,
-      debugCommand,
+      setDebugCommand,
       handleError,
       validateCommandOptions
     });
 
-    const instance = instanceFactory(executeCommand);
+    const instance = createInstance(executeCommand);
 
-    const queue = window[instanceNamespace].q;
+    const queue = window[instanceName].q;
     queue.push = instance;
+    logger.logOnInstanceCreated({ instance });
     queue.forEach(instance);
   });
 }

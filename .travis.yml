@@ -4,10 +4,9 @@ language: node_js
 node_js: 'stable'
 install:
 - npm i -g npm
-cache:
-  directories:
-  - node_modules
 addons:
+  chrome: stable
+  firefox: latest
   sonarcloud:
     organization: adobeinc
 services:
@@ -15,22 +14,35 @@ services:
 
 jobs:
   include:
-      script:
-      - npm install
-      - if [ "$TRAVIS_EVENT_TYPE" == "cron" ]; then npm run functional:cron:prod; fi
-      - if [ "$TRAVIS_EVENT_TYPE" != "cron" ]; then npm run build:prod; fi
-      - if [ "$TRAVIS_EVENT_TYPE" != "cron" ]; then npm run functional:ci; fi
-      - if [ "$TRAVIS_EVENT_TYPE" != "cron" ]; then npm run test:saucelabs; fi
+      - stage: CRON build
+        if: type == cron
+        script: 
+        - npm ci
+        - npm run functional:cron:prod
+      - stage: PR build
+        if: type == pull_request OR type == push
+        script:
+        - npm ci
+        - npm run build:prod
+        - npm run functional:ci
+        - npm run functional:ci:bs
+        - npm run test:saucelabs
+      - stage: API/Konductor Build
+        if: type == api
+        script: 
+        - npm ci
+        - npm run functional:api
 
 notifications:
   slack: adobedx:AlI4WB2ojGDcqsBEVZ1EGsCR
   email:
-  recipients:
-    - mowla@adobe.com
-    - khoury@adobe.com
-    - aahardy@adobe.com
-  on_success: always
-  on_failure: always
+    recipients:
+      - mowla@adobe.com
+      - khoury@adobe.com
+      - aahardy@adobe.com
+      - alloy-engs@adobe.com
+      - ee-konductor-engineering@adobe.com
+    on_failure: always
   
 before_install:
 - stty cols 80

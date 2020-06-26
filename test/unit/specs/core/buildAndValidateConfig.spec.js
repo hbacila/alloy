@@ -20,7 +20,6 @@ describe("buildAndValidateConfig", () => {
   let coreConfigValidators;
   let logger;
   let setDebugEnabled;
-  let setErrorsEnabled;
 
   beforeEach(() => {
     options = {};
@@ -35,10 +34,11 @@ describe("buildAndValidateConfig", () => {
     };
     logger = {
       enabled: false,
-      log: jasmine.createSpy()
+      log: jasmine.createSpy(),
+      logOnBeforeCommand: jasmine.createSpy(),
+      logOnInstanceConfigured: jasmine.createSpy()
     };
     setDebugEnabled = jasmine.createSpy();
-    setErrorsEnabled = jasmine.createSpy();
   });
 
   it("adds validators and validates options", () => {
@@ -49,24 +49,9 @@ describe("buildAndValidateConfig", () => {
         coreConfigValidators,
         createConfig,
         logger,
-        setDebugEnabled,
-        setErrorsEnabled
+        setDebugEnabled
       });
     }).toThrowError();
-  });
-
-  it("sets errors enabled based on config", () => {
-    options.errorsEnabled = true;
-    buildAndValidateConfig({
-      options,
-      componentCreators,
-      coreConfigValidators,
-      createConfig,
-      logger,
-      setDebugEnabled,
-      setErrorsEnabled
-    });
-    expect(setErrorsEnabled).toHaveBeenCalledWith(true);
   });
 
   it("sets debug enabled based on config", () => {
@@ -77,8 +62,7 @@ describe("buildAndValidateConfig", () => {
       coreConfigValidators,
       createConfig,
       logger,
-      setDebugEnabled,
-      setErrorsEnabled
+      setDebugEnabled
     });
     expect(setDebugEnabled).toHaveBeenCalledWith(true, { fromConfig: true });
   });
@@ -91,12 +75,13 @@ describe("buildAndValidateConfig", () => {
       coreConfigValidators,
       createConfig,
       logger,
-      setDebugEnabled,
-      setErrorsEnabled
+      setDebugEnabled
     });
-    expect(logger.log).toHaveBeenCalledWith("Computed configuration:", {
-      debugEnabled: false,
-      idSyncEnabled: true
+    expect(logger.logOnInstanceConfigured).toHaveBeenCalledWith({
+      config: {
+        debugEnabled: false,
+        idSyncEnabled: true
+      }
     });
   });
 
@@ -110,8 +95,7 @@ describe("buildAndValidateConfig", () => {
         coreConfigValidators,
         createConfig,
         logger,
-        setDebugEnabled,
-        setErrorsEnabled
+        setDebugEnabled
       })
     ).toThrowError();
   });
@@ -123,8 +107,7 @@ describe("buildAndValidateConfig", () => {
       coreConfigValidators,
       createConfig,
       logger,
-      setDebugEnabled,
-      setErrorsEnabled
+      setDebugEnabled
     });
     expect(result).toEqual({ idSyncEnabled: true, debugEnabled: false });
   });
