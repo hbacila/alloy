@@ -55,7 +55,7 @@ export default ({
           : edgeDomain;
         const requestId = uuid();
         let url = `https://${endpointDomain}/${edgeBasePath}/${apiVersion}/${action}?configId=${edgeConfigId}&requestId=${requestId}`;
-        url = url.replace("https", "http").replace(`${edgeBasePath}/`, "");
+        url = url.replace("https", "http");
         cookieTransfer.cookiesToPayload(payload, endpointDomain);
         return sendNetworkRequest({ payload, url, requestId });
       })
