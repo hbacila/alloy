@@ -17,8 +17,6 @@ export { default as areThirdPartyCookiesSupportedByDefault } from "./areThirdPar
 export { default as assign } from "./assign";
 export { default as assignIf } from "./assignIf";
 export { default as clone } from "./clone";
-export { default as convertBufferToHex } from "./convertBufferToHex";
-export { default as convertStringToSha256Buffer } from "./convertStringToSha256Buffer";
 export { default as convertTimes } from "./convertTimes";
 export { default as cookieJar } from "./cookieJar";
 export { default as createMerger } from "./createMerger";
@@ -60,4 +58,5 @@ export { default as toArray } from "./toArray";
 export { default as toError } from "./toError";
 export { default as toISOStringLocal } from "./toISOStringLocal";
 export { default as uuid } from "./uuid";
+export { default as validateIdentityMap } from "./validateIdentityMap";
 export { default as values } from "./values";

@@ -15,8 +15,8 @@ import { defer } from "../../../../../src/utils";
 import flushPromiseChains from "../../../helpers/flushPromiseChains";
 
 describe("Identity::createComponent", () => {
-  let addEcidQueryToEvent;
-  let ensureRequestHasIdentity;
+  let ensureSingleIdentity;
+  let addEcidQueryToPayload;
   let setLegacyEcid;
   let handleResponseForIdSyncs;
   let getEcidFromResponse;
@@ -27,8 +27,8 @@ describe("Identity::createComponent", () => {
   let getIdentityDeferred;
 
   beforeEach(() => {
-    addEcidQueryToEvent = jasmine.createSpy("addEcidQueryToEvent");
-    ensureRequestHasIdentity = jasmine.createSpy("ensureRequestHasIdentity");
+    ensureSingleIdentity = jasmine.createSpy("ensureSingleIdentity");
+    addEcidQueryToPayload = jasmine.createSpy("addEcidQueryToPayload");
     setLegacyEcid = jasmine.createSpy("setLegacyEcid");
     handleResponseForIdSyncs = jasmine.createSpy("handleResponseForIdSyncs");
     getEcidFromResponse = jasmine.createSpy("getEcidFromResponse");
@@ -41,8 +41,8 @@ describe("Identity::createComponent", () => {
       .createSpy("getIdentity")
       .and.returnValue(getIdentityDeferred.promise);
     component = createComponent({
-      addEcidQueryToEvent,
-      ensureRequestHasIdentity,
+      ensureSingleIdentity,
+      addEcidQueryToPayload,
       setLegacyEcid,
       handleResponseForIdSyncs,
       getEcidFromResponse,
@@ -52,22 +52,29 @@ describe("Identity::createComponent", () => {
   });
 
   it("adds ECID query to event", () => {
-    const event = { type: "event" };
-    component.lifecycle.onBeforeEvent({ event });
-    expect(addEcidQueryToEvent).toHaveBeenCalledWith(event);
+    const payload = { type: "payload" };
+    const onResponse = jasmine.createSpy("onResponse");
+    component.lifecycle.onBeforeRequest({ payload, onResponse });
+    expect(addEcidQueryToPayload).toHaveBeenCalledWith(payload);
   });
 
   it("ensures request has identity", () => {
     const payload = { type: "payload" };
     const onResponse = jasmine.createSpy("onResponse");
-    const ensureRequestHasIdentityPromise = Promise.resolve();
-    ensureRequestHasIdentity.and.returnValue(ensureRequestHasIdentityPromise);
-    const result = component.lifecycle.onBeforeRequest({ payload, onResponse });
-    expect(ensureRequestHasIdentity).toHaveBeenCalledWith({
+    const onRequestFailure = jasmine.createSpy("onRequestFailure");
+    const ensureSingleIdentityPromise = Promise.resolve();
+    ensureSingleIdentity.and.returnValue(ensureSingleIdentityPromise);
+    const result = component.lifecycle.onBeforeRequest({
       payload,
-      onResponse
+      onResponse,
+      onRequestFailure
     });
-    expect(result).toBe(ensureRequestHasIdentityPromise);
+    expect(ensureSingleIdentity).toHaveBeenCalledWith({
+      payload,
+      onResponse,
+      onRequestFailure
+    });
+    expect(result).toBe(ensureSingleIdentityPromise);
   });
 
   it("does not create legacy identity cookie if response does not contain ECID", () => {

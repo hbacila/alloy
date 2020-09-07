@@ -1,8 +1,8 @@
 import getIdentityOptionsValidator from "./getIdentity/getIdentityOptionsValidator";
 
 export default ({
-  addEcidQueryToEvent,
-  ensureRequestHasIdentity,
+  addEcidQueryToPayload,
+  ensureSingleIdentity,
   setLegacyEcid,
   handleResponseForIdSyncs,
   getEcidFromResponse,
@@ -12,14 +12,11 @@ export default ({
   let ecid;
   return {
     lifecycle: {
-      // TODO: It would probably be best to query on the data collection payload level
-      // rather than the event. It seems like a payload-level thing and would save
-      // space whenever we start supporting multiple events per payload.
-      onBeforeEvent({ event }) {
-        addEcidQueryToEvent(event);
-      },
-      onBeforeRequest({ payload, onResponse }) {
-        return ensureRequestHasIdentity({ payload, onResponse });
+      onBeforeRequest({ payload, onResponse, onRequestFailure }) {
+        // Querying the ECID on every request to be able to set the legacy cookie, and make it
+        // available for the `getIdentity` command.
+        addEcidQueryToPayload(payload);
+        return ensureSingleIdentity({ payload, onResponse, onRequestFailure });
       },
       onResponse({ response }) {
         if (!ecid) {

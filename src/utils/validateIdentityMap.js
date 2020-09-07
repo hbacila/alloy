@@ -10,16 +10,30 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 
-import addEcidQueryToEvent from "../../../../../src/components/Identity/addEcidQueryToEvent";
+import {
+  string,
+  objectOf,
+  boolean,
+  arrayOf,
+  enumOf,
+  mapOfValues
+} from "./validation/index";
+import {
+  AMBIGUOUS,
+  AUTHENTICATED,
+  LOGGED_OUT
+} from "../constants/identityMapAuthenticatedState";
 
-describe("Identity::addEcidQueryToEvent", () => {
-  it("adds an ECID query to the event", () => {
-    const event = jasmine.createSpyObj("event", ["mergeQuery"]);
-    addEcidQueryToEvent(event);
-    expect(event.mergeQuery).toHaveBeenCalledWith({
-      identity: {
-        fetch: ["ECID"]
-      }
-    });
-  });
-});
+export default mapOfValues(
+  arrayOf(
+    objectOf({
+      authenticatedState: enumOf(AMBIGUOUS, AUTHENTICATED, LOGGED_OUT),
+      id: string(),
+      namespace: objectOf({
+        code: string()
+      }).noUnknownFields(),
+      primary: boolean(),
+      xid: string()
+    })
+  ).required()
+);

@@ -10,7 +10,7 @@ OF ANY KIND, either express or implied. See the License for the specific languag
 governing permissions and limitations under the License.
 */
 import assertValid from "./assertValid";
-import { find } from "../index";
+import find from "../find";
 
 export default (validators, message) => (value, path) => {
   const valid = find(validators, validator => {
