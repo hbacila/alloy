@@ -182,7 +182,7 @@ describe("injectSendEdgeNetworkRequest", () => {
       expect(sendNetworkRequest).toHaveBeenCalledWith({
         payload,
         url: jasmine.stringMatching(
-          /http:\/\/edge\.example\.com\/v1\/test-action\?configId=myconfigId&requestId=[0-9a-f-]+/
+          /http:\/\/edge\.example\.com\/ee\/v1\/test-action\?configId=myconfigId&requestId=[0-9a-f-]+/
         ),
         requestId: jasmine.stringMatching(/^[0-9a-f-]+$/)
       });
@@ -201,7 +201,7 @@ describe("injectSendEdgeNetworkRequest", () => {
       expect(sendNetworkRequest).toHaveBeenCalledWith({
         payload,
         url: jasmine.stringMatching(
-          /http:\/\/adobedc-int\.demdex\.net\/v1\/test-action\?configId=myconfigId&requestId=[0-9a-f-]+/
+          /http:\/\/adobedc-int\.demdex\.net\/ee\/v1\/test-action\?configId=myconfigId&requestId=[0-9a-f-]+/
         ),
         requestId: jasmine.stringMatching(/^[0-9a-f-]+$/)
       });
