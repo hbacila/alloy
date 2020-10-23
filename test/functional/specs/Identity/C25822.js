@@ -10,7 +10,10 @@ import {
 } from "../../helpers/constants/configParts";
 
 const networkLogger = createNetworkLogger();
-const config = compose(orgMainConfigMain, debugEnabled);
+const config = compose(
+  orgMainConfigMain,
+  debugEnabled
+);
 
 createFixture({
   title: "C25822: Event command sends a request with a validated identityMap",
@@ -36,10 +39,7 @@ const triggerBadAlloyEvent = ClientFunction(() => {
         }
       }
     })
-    .then(
-      () => undefined,
-      e => e.message
-    );
+    .then(() => undefined, e => e.message);
 });
 
 test("C25822: Event command validates the identityMap", async () => {

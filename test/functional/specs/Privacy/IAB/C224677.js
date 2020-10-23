@@ -14,7 +14,10 @@ import {
 
 const { IAB_NO_PURPOSE_TEN } = require("../../../helpers/constants/consent");
 
-const config = compose(orgMainConfigMain, debugEnabled);
+const config = compose(
+  orgMainConfigMain,
+  debugEnabled
+);
 
 const networkLogger = createNetworkLogger();
 
@@ -38,10 +41,7 @@ const triggerSetConsent = ClientFunction(
 );
 
 const getErrorMessageFromSendEvent = ClientFunction(() =>
-  window.alloy("sendEvent").then(
-    () => undefined,
-    e => e.message
-  )
+  window.alloy("sendEvent").then(() => undefined, e => e.message)
 );
 
 test("Test C224677: Call setConsent when purpose 10 is FALSE", async () => {
@@ -84,9 +84,7 @@ test("Test C224677: Call setConsent when purpose 10 is FALSE", async () => {
 
   await t
     .expect(errorMessage)
-    .contains(
-      "[Code global:0] User has opted out of all advertising solutions"
-    );
+    .contains("[Code EXEG:0] User has opted out of all advertising solutions");
 
   await t.expect(networkLogger.edgeEndpointLogs.requests.length).eql(1);
   await responseStatus(networkLogger.edgeEndpointLogs.requests, 403);

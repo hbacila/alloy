@@ -13,7 +13,11 @@ import {
 } from "../../helpers/constants/configParts";
 import setLegacyIdentityCookie from "../../helpers/setLegacyIdentityCookie";
 
-const config = compose(orgMainConfigMain, debugEnabled, migrationEnabled);
+const config = compose(
+  orgMainConfigMain,
+  debugEnabled,
+  migrationEnabled
+);
 
 const networkLogger = createNetworkLogger();
 

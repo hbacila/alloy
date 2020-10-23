@@ -10,7 +10,10 @@ import {
   debugEnabled
 } from "../../helpers/constants/configParts";
 
-const debugEnabledConfig = compose(orgMainConfigMain, debugEnabled);
+const debugEnabledConfig = compose(
+  orgMainConfigMain,
+  debugEnabled
+);
 
 const networkLogger = createNetworkLogger();
 

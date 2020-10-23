@@ -14,7 +14,11 @@ import {
   migrationDisabled
 } from "../../helpers/constants/configParts";
 
-const config = compose(orgMainConfigMain, debugEnabled, migrationDisabled);
+const config = compose(
+  orgMainConfigMain,
+  debugEnabled,
+  migrationDisabled
+);
 
 const networkLogger = createNetworkLogger();
 const { ecidRegex } = generalConstants;

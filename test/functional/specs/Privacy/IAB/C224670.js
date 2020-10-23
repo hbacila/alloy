@@ -13,7 +13,11 @@ import {
   debugEnabled
 } from "../../../helpers/constants/configParts";
 
-const config = compose(orgMainConfigMain, consentPending, debugEnabled);
+const config = compose(
+  orgMainConfigMain,
+  consentPending,
+  debugEnabled
+);
 
 const { IAB_CONSENT_IN } = require("../../../helpers/constants/consent");
 

@@ -12,7 +12,11 @@ import createConsoleLogger from "../../helpers/consoleLogger";
 
 const { CONSENT_OUT, CONSENT_IN } = require("../../helpers/constants/consent");
 
-const config = compose(orgMainConfigMain, consentPending, debugEnabled);
+const config = compose(
+  orgMainConfigMain,
+  consentPending,
+  debugEnabled
+);
 
 const networkLogger = createNetworkLogger();
 
@@ -35,10 +39,9 @@ test("Test C14404: User cannot consent to all purposes after consenting to no pu
   });
   const setConsentErrorMessage = await t.eval(
     () =>
-      window.alloy("setConsent", CONSENT_IN).then(
-        () => undefined,
-        e => e.message
-      ),
+      window
+        .alloy("setConsent", CONSENT_IN)
+        .then(() => undefined, e => e.message),
     { dependencies: { CONSENT_IN } }
   );
   await t

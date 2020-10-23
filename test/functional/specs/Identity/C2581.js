@@ -10,7 +10,10 @@ import {
   debugEnabled
 } from "../../helpers/constants/configParts";
 
-const debugEnabledConfig = compose(orgMainConfigMain, debugEnabled);
+const debugEnabledConfig = compose(
+  orgMainConfigMain,
+  debugEnabled
+);
 
 const interactHook = new SequentialHook(/v1\/interact\?/);
 

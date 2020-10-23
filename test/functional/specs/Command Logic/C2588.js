@@ -13,10 +13,9 @@ test.meta({
 });
 
 const configureAlloyInstance = ClientFunction(config => {
-  return window.alloy("configure", config).then(
-    () => {},
-    error => error.message
-  );
+  return window
+    .alloy("configure", config)
+    .then(() => {}, error => error.message);
 });
 
 test("Test C2588: Throw error when configure is executed multiple times.", async t => {

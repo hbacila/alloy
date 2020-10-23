@@ -12,7 +12,10 @@ import {
   debugEnabled
 } from "../../../helpers/constants/configParts";
 
-const config = compose(orgMainConfigMain, debugEnabled);
+const config = compose(
+  orgMainConfigMain,
+  debugEnabled
+);
 
 const networkLogger = createNetworkLogger();
 
@@ -44,10 +47,7 @@ const sendEventWithConsentError = ClientFunction(() =>
         ]
       }
     })
-    .then(
-      () => undefined,
-      e => e.message
-    )
+    .then(() => undefined, e => e.message)
 );
 
 const sendEvent = ClientFunction(() => window.alloy("sendEvent"));

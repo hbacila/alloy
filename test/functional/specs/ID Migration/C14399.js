@@ -13,7 +13,11 @@ import {
   migrationEnabled
 } from "../../helpers/constants/configParts";
 
-const config = compose(orgMainConfigMain, debugEnabled, migrationEnabled);
+const config = compose(
+  orgMainConfigMain,
+  debugEnabled,
+  migrationEnabled
+);
 
 const networkLogger = createNetworkLogger();
 

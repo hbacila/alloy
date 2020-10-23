@@ -15,10 +15,7 @@ import createMerger from "../../../../src/utils/createMerger";
 describe("createMerger", () => {
   it("populates key if key doesn't exist", () => {
     const content = {};
-    createMerger(
-      content,
-      "fruit"
-    )({
+    createMerger(content, "fruit")({
       type: "apple"
     });
     expect(content).toEqual({
@@ -41,10 +38,7 @@ describe("createMerger", () => {
         }
       }
     };
-    createMerger(
-      content,
-      "foods"
-    )({
+    createMerger(content, "foods")({
       fruits: {
         banana: {
           calories: 110

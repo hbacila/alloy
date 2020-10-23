@@ -10,10 +10,13 @@ import {
 } from "../../helpers/constants/configParts";
 import getResponseBody from "../../helpers/networkLogger/getResponseBody";
 import createResponse from "../../../../src/core/createResponse";
-import testServerUrl from "../../helpers/constants/testServerUrl";
+import testPageUrl from "../../helpers/constants/testPageUrl";
 
 const networkLogger = createNetworkLogger();
-const config = compose(orgMainConfigMain, debugEnabled);
+const config = compose(
+  orgMainConfigMain,
+  debugEnabled
+);
 const PAGE_WIDE_SCOPE = "__view__";
 const decisionContent =
   '<div id="C28755"> Here is an awesome target offer!</div>';
@@ -22,7 +25,7 @@ createFixture({
   title:
     "C28755: A VEC offer for all visitors should return in every event if __view__ scope exist",
   requestHooks: [networkLogger.edgeEndpointLogs],
-  url: `${testServerUrl}?test=C28755`
+  url: `${testPageUrl}?test=C28755`
 });
 
 test.meta({
@@ -54,18 +57,21 @@ test("Test C28755: A VEC offer for all visitors should return in every event if 
 
   const request = networkLogger.edgeEndpointLogs.requests[0];
   const requestBody = JSON.parse(request.request.body);
+  const personalizationSchemas =
+    requestBody.events[0].query.personalization.schemas;
 
   await t
     .expect(requestBody.events[0].query.personalization.decisionScopes)
     .eql([PAGE_WIDE_SCOPE]);
-  await t
-    .expect(requestBody.events[0].query.personalization.schemas)
-    .eql([
-      "https://ns.adobe.com/personalization/dom-action",
-      "https://ns.adobe.com/personalization/html-content-item",
-      "https://ns.adobe.com/personalization/json-content-item",
-      "https://ns.adobe.com/personalization/redirect-item"
-    ]);
+
+  const results = [
+    "https://ns.adobe.com/personalization/dom-action",
+    "https://ns.adobe.com/personalization/html-content-item",
+    "https://ns.adobe.com/personalization/json-content-item",
+    "https://ns.adobe.com/personalization/redirect-item"
+  ].every(schema => !!personalizationSchemas.find(s => s === schema));
+
+  await t.expect(results).eql(true);
 
   const response = JSON.parse(
     getResponseBody(networkLogger.edgeEndpointLogs.requests[0])

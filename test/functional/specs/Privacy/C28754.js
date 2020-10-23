@@ -13,7 +13,10 @@ import {
 
 const { CONSENT_OUT } = require("../../helpers/constants/consent");
 
-const config = compose(orgMainConfigMain, consentPending);
+const config = compose(
+  orgMainConfigMain,
+  consentPending
+);
 
 const networkLogger = createNetworkLogger();
 

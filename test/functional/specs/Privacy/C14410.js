@@ -15,17 +15,11 @@ test.meta({
 });
 
 const getErrorMessageFromConfigure = ClientFunction(config =>
-  window.alloy("configure", config).then(
-    () => undefined,
-    e => e.message
-  )
+  window.alloy("configure", config).then(() => undefined, e => e.message)
 );
 
 const getErrorMessageFromSetConsent = ClientFunction(consent =>
-  window.alloy("setConsent", consent).then(
-    () => undefined,
-    e => e.message
-  )
+  window.alloy("setConsent", consent).then(() => undefined, e => e.message)
 );
 
 // This test was originally designed to be done using one test case. When the configure command fails

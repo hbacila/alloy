@@ -38,7 +38,10 @@ const setConsentOut = ClientFunction(
 test("C25148 - When default consent is 'in', consent can be revoked", async () => {
   await configureAlloyInstance(
     "alloy",
-    compose(orgMainConfigMain, debugEnabled)
+    compose(
+      orgMainConfigMain,
+      debugEnabled
+    )
   );
 
   // trigger an event

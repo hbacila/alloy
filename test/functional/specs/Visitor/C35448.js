@@ -1,6 +1,5 @@
 import { ClientFunction, t } from "testcafe";
 import createFixture from "../../helpers/createFixture";
-import { alloyWithVisitorTestPageUrl } from "../../helpers/constants/testServerUrl";
 import getVisitorEcid from "../../helpers/visitorService/getVisitorEcid";
 import configureAlloyInstance from "../../helpers/configureAlloyInstance";
 import {
@@ -13,7 +12,7 @@ import {
 createFixture({
   title:
     "C35448 - When ID migration is enabled and Visitor is on the page, Alloy waits for Visitor to get ECID and then uses this value.",
-  url: alloyWithVisitorTestPageUrl
+  includeVisitorLibrary: true
 });
 
 test.meta({
@@ -22,7 +21,11 @@ test.meta({
   TEST_RUN: "Regression"
 });
 
-const config = compose(orgMainConfigMain, debugEnabled, migrationEnabled);
+const config = compose(
+  orgMainConfigMain,
+  debugEnabled,
+  migrationEnabled
+);
 
 const getIdentity = ClientFunction(() => {
   return window.alloy("getIdentity");

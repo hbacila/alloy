@@ -9,9 +9,15 @@ import {
   debugDisabled
 } from "../../helpers/constants/configParts";
 
-const debugEnabledConfig = compose(orgMainConfigMain, debugEnabled);
+const debugEnabledConfig = compose(
+  orgMainConfigMain,
+  debugEnabled
+);
 
-const debugDisabledConfig = compose(orgMainConfigMain, debugDisabled);
+const debugDisabledConfig = compose(
+  orgMainConfigMain,
+  debugDisabled
+);
 
 createFixture({
   title: "C2583: Toggle logging through configuration"

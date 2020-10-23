@@ -9,7 +9,11 @@ import {
   debugEnabled
 } from "../../../helpers/constants/configParts";
 
-const config = compose(orgMainConfigMain, consentPending, debugEnabled);
+const config = compose(
+  orgMainConfigMain,
+  consentPending,
+  debugEnabled
+);
 
 const networkLogger = createNetworkLogger();
 
@@ -29,16 +33,13 @@ test.meta({
 });
 
 const getErrorMessageFromSetConsent = ClientFunction(consent =>
-  window.alloy("setConsent", consent).then(
-    () => undefined,
-    e => e.message
-  )
+  window.alloy("setConsent", consent).then(() => undefined, e => e.message)
 );
 
 test("Test C224675: Passing invalid consent options should throw a validation error", async () => {
   await configureAlloyInstance("alloy", config);
 
-  const errorMessageForInvalidStandard = getErrorMessageFromSetConsent({
+  const errorMessageForInvalidStandard = await getErrorMessageFromSetConsent({
     consent: [
       {
         standard: "IAB",
@@ -62,7 +63,7 @@ test("Test C224675: Passing invalid consent options should throw a validation er
       "The value supplied for field 'standard' does not match your input schema"
     );
 
-  const errorMessageForInvalidVersion = getErrorMessageFromSetConsent({
+  const errorMessageForInvalidVersion = await getErrorMessageFromSetConsent({
     consent: [
       {
         standard: "IAB TCF",
@@ -87,7 +88,7 @@ test("Test C224675: Passing invalid consent options should throw a validation er
     .expect(errorMessageForInvalidVersion)
     .contains("Allowed IAB version is 2.0 for standard 'IAB TCF'");
 
-  const errorMessageForInvalidValue = getErrorMessageFromSetConsent({
+  const errorMessageForInvalidValue = await getErrorMessageFromSetConsent({
     consent: [
       {
         standard: "IAB TCF",
@@ -108,9 +109,9 @@ test("Test C224675: Passing invalid consent options should throw a validation er
   // Discussed it with the Konductor team, they will re-work it.
   await t
     .expect(errorMessageForInvalidValue)
-    .contains("[Code global:400] Invalid request.");
+    .contains("[Code EXEG:400] Invalid request.");
 
-  const errorMessageForEmtpyValue = getErrorMessageFromSetConsent({
+  const errorMessageForEmtpyValue = await getErrorMessageFromSetConsent({
     consent: [
       {
         standard: "IAB TCF",

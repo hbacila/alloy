@@ -14,7 +14,11 @@ import {
 } from "../../helpers/constants/configParts";
 import setLegacyIdentityCookie from "../../helpers/setLegacyIdentityCookie";
 
-const config = compose(orgMainConfigMain, debugEnabled, migrationDisabled);
+const config = compose(
+  orgMainConfigMain,
+  debugEnabled,
+  migrationDisabled
+);
 
 const networkLogger = createNetworkLogger();
 const { ecidRegex } = generalConstants;

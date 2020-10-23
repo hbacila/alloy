@@ -8,7 +8,10 @@ import {
 
 const { CONSENT_OUT } = require("../../helpers/constants/consent");
 
-const config = compose(orgMainConfigMain, consentPending);
+const config = compose(
+  orgMainConfigMain,
+  consentPending
+);
 
 createFixture({
   title:
@@ -28,10 +31,9 @@ test("Test C14411: User cannot consent to no purposes after consenting to no pur
   });
   const setConsentErrorMessage = await t.eval(
     () =>
-      window.alloy("setConsent", CONSENT_OUT).then(
-        () => undefined,
-        e => e.message
-      ),
+      window
+        .alloy("setConsent", CONSENT_OUT)
+        .then(() => undefined, e => e.message),
     { dependencies: { CONSENT_OUT } }
   );
   await t

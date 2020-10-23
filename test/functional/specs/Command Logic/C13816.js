@@ -12,10 +12,7 @@ test.meta({
 
 test("Test C13816: Throws error when configure has no options", async t => {
   const configureErrorMessage = await t.eval(() => {
-    return window.alloy("configure").then(
-      () => undefined,
-      e => e.message
-    );
+    return window.alloy("configure").then(() => undefined, e => e.message);
   });
 
   await t

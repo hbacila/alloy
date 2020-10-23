@@ -11,7 +11,11 @@ import createConsoleLogger from "../../helpers/consoleLogger";
 
 const { CONSENT_IN, CONSENT_OUT } = require("../../helpers/constants/consent");
 
-const config = compose(orgMainConfigMain, consentPending, debugEnabled);
+const config = compose(
+  orgMainConfigMain,
+  consentPending,
+  debugEnabled
+);
 
 const setConsentHook = new SequentialHook(/v1\/privacy\/set-consent\?/);
 

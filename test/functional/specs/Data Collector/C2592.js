@@ -10,7 +10,10 @@ import {
 } from "../../helpers/constants/configParts";
 
 const networkLogger = createNetworkLogger();
-const config = compose(orgMainConfigMain, debugEnabled);
+const config = compose(
+  orgMainConfigMain,
+  debugEnabled
+);
 
 createFixture({
   title: "C2592: Event command sends a request",
